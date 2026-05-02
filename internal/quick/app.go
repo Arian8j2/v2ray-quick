@@ -23,6 +23,8 @@ func Main(args []string) error {
 	switch args[0] {
 	case "up":
 		return up(args[1:])
+	case "print":
+		return printConfig(args[1:])
 	case "down":
 		return down(args[1:])
 	default:
@@ -42,15 +44,9 @@ func up(args []string) error {
 	if flags.NArg() != 1 {
 		return usageError()
 	}
-	if *shortAddress != "" {
-		*address = *shortAddress
-	}
-	if *address == "" {
-		randomAddress, err := randomTunAddress()
-		if err != nil {
-			return err
-		}
-		*address = randomAddress
+	addressValue, err := resolveTunAddress(*address, *shortAddress)
+	if err != nil {
+		return err
 	}
 
 	instance, err := NewInstance(flags.Arg(0))
@@ -59,9 +55,9 @@ func up(args []string) error {
 	}
 
 	if *foreground {
-		return runForeground(instance, *address)
+		return runForeground(instance, addressValue)
 	}
-	return startBackground(instance, *address)
+	return startBackground(instance, addressValue)
 }
 
 func down(args []string) error {
@@ -138,7 +134,17 @@ func processAlive(pid int) bool {
 }
 
 func usageError() error {
-	return errors.New("usage: v2ray-quick up [-f] [-a address|--address address] ./name.conf | v2ray-quick down ./name.conf")
+	return errors.New("usage: v2ray-quick up [-f] [-a address|--address address] ./name.conf | v2ray-quick print [-a address|--address address] ./name.conf | v2ray-quick down ./name.conf")
+}
+
+func resolveTunAddress(address string, shortAddress string) (string, error) {
+	if shortAddress != "" {
+		address = shortAddress
+	}
+	if address != "" {
+		return address, nil
+	}
+	return randomTunAddress()
 }
 
 func randomTunAddress() (string, error) {
