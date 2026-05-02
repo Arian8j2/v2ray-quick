@@ -1,13 +1,9 @@
 package quick
 
 import (
-	"context"
 	"flag"
-	"fmt"
 	"io"
 	"os"
-
-	"github.com/sagernet/sing/common/json"
 )
 
 func printConfig(args []string) error {
@@ -21,33 +17,31 @@ func printConfig(args []string) error {
 	if flags.NArg() != 1 {
 		return usageError()
 	}
-	addressValue, err := resolveTunAddress(*address, *shortAddress)
-	if err != nil {
-		return err
+	addressValue := *address
+	if *shortAddress != "" {
+		addressValue = *shortAddress
+	}
+	if addressValue != "" {
+		if err := validateTunAddress(addressValue); err != nil {
+			return err
+		}
 	}
 
 	instance, err := NewInstance(flags.Arg(0))
 	if err != nil {
 		return err
 	}
-	return writeSingBoxConfig(os.Stdout, instance, addressValue)
+	return writeXrayConfigForInstance(os.Stdout, instance)
 }
 
-func writeSingBoxConfig(writer io.Writer, instance Instance, address string) error {
+func writeXrayConfigForInstance(writer io.Writer, instance Instance) error {
 	vless, err := LoadVLESS(instance.ConfigPath)
 	if err != nil {
 		return err
 	}
-	options, err := BuildOptions(vless, instance.InterfaceName, address)
+	config, err := BuildConfig(vless, instance.InterfaceName)
 	if err != nil {
 		return err
 	}
-
-	encoder := json.NewEncoderContext(context.Background(), writer)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(options); err != nil {
-		return fmt.Errorf("write sing-box config: %w", err)
-	}
-	return nil
+	return writeXrayConfig(writer, config)
 }

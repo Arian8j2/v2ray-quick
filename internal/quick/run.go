@@ -19,7 +19,7 @@ func runForeground(instance Instance, address string) error {
 	if err != nil {
 		return err
 	}
-	options, err := BuildOptions(vless, instance.InterfaceName, address)
+	config, err := BuildConfig(vless, instance.InterfaceName)
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func runForeground(instance Instance, address string) error {
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(signals)
 
-	service, stopService, err := startSingBox(ctx, options)
+	service, stopService, err := startXray(ctx, config)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,13 @@ func runForeground(instance Instance, address string) error {
 	if err := waitForInterface(ctx, instance.InterfaceName, 10*time.Second); err != nil {
 		cancel()
 		stopService()
-		_ = closeSingBox(service)
+		_ = closeXray(service)
+		return err
+	}
+	if err := assignTunAddress(instance.InterfaceName, address); err != nil {
+		cancel()
+		stopService()
+		_ = closeXray(service)
 		return err
 	}
 	interfaceDeleted := make(chan struct{}, 1)
@@ -56,7 +62,7 @@ func runForeground(instance Instance, address string) error {
 
 	cancel()
 	stopService()
-	err = closeSingBox(service)
+	err = closeXray(service)
 	if interfaceWasDeleted {
 		return nil
 	}

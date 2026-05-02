@@ -1,6 +1,6 @@
 # v2ray-quick
 
-`v2ray-quick` is a small Linux CLI for bringing up and tearing down a sing-box TUN interface from a VLESS link. Its command shape and terminal output are intentionally modeled after `wg-quick`.
+`v2ray-quick` is a small Linux CLI for bringing up and tearing down an Xray TUN interface from a VLESS link. Its command shape and terminal output are intentionally modeled after `wg-quick`.
 
 This project is entirely AI-written.
 
@@ -18,7 +18,7 @@ Bring the interface up:
 sudo ./v2ray-quick up ./name.conf
 ```
 
-Run in the foreground to see startup and sing-box logs:
+Run in the foreground to see startup and Xray logs:
 
 ```sh
 sudo ./v2ray-quick up -f ./name.conf
@@ -34,13 +34,9 @@ The interface name is the config filename without `.conf`, so `name.conf` create
 
 ## Supported Config
 
-- Only `vless://` links are supported.
-- Only the first nonblank line of the config file is read.
-- Supported VLESS encryption: `none`.
-- Supported security: `none`, `tls`.
-- Supported transport: `tcp`, `ws`.
+- Only `vless://` links are supported for now.
 
-The generated sing-box TUN inbound has `AutoRoute: false`; `v2ray-quick` creates the interface, but you must handle routes yourself.
+The generated Xray TUN inbound does not install routes; `v2ray-quick` creates the interface and assigns its address, but you must handle routes yourself.
 
 ## Build And Test
 

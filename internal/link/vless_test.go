@@ -110,6 +110,85 @@ func TestParseVLESSTLSWebSocket(t *testing.T) {
 	}
 }
 
+func TestParseVLESSReality(t *testing.T) {
+	parsed, err := ParseVLESS("vless://6202b230-417c-4d8e-b624-0f71afa9c75d@example.com:443?security=reality&encryption=none&type=tcp&flow=xtls-rprx-vision&sni=www.example.com&fp=chrome&pbk=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&sid=0123456789abcdef&spx=%2F&pqv=verify#example-reality")
+	if err != nil {
+		t.Fatalf("ParseVLESS() error = %v", err)
+	}
+
+	if parsed.Flow != "xtls-rprx-vision" {
+		t.Fatalf("Flow = %q", parsed.Flow)
+	}
+	if parsed.Security.Type != "reality" {
+		t.Fatalf("Security.Type = %q", parsed.Security.Type)
+	}
+	if parsed.Security.ServerName != "www.example.com" {
+		t.Fatalf("Security.ServerName = %q", parsed.Security.ServerName)
+	}
+	if parsed.Security.Fingerprint != "chrome" {
+		t.Fatalf("Security.Fingerprint = %q", parsed.Security.Fingerprint)
+	}
+	if parsed.Security.PublicKey != "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" {
+		t.Fatalf("Security.PublicKey = %q", parsed.Security.PublicKey)
+	}
+	if parsed.Security.ShortID != "0123456789abcdef" {
+		t.Fatalf("Security.ShortID = %q", parsed.Security.ShortID)
+	}
+	if parsed.Security.SpiderX != "/" {
+		t.Fatalf("Security.SpiderX = %q", parsed.Security.SpiderX)
+	}
+	if parsed.Security.MLDSA65Verify != "verify" {
+		t.Fatalf("Security.MLDSA65Verify = %q", parsed.Security.MLDSA65Verify)
+	}
+}
+
+func TestParseVLESSV2rayNGQueryFields(t *testing.T) {
+	parsed, err := ParseVLESS("vless://6202b230-417c-4d8e-b624-0f71afa9c75d@example.com:443?security=tls&encryption=none&type=grpc&headerType=http&host=front.example.com&path=%2Fa%2C%2Fb&seed=kcp-seed&mtu=1350&tti=20&mode=multi&serviceName=svc&authority=grpc.example.com&extra=%7B%7D&fm=%7B%7D&sni=tls.example.com&fp=chrome&alpn=h2%2Chttp%2F1.1&ech=ech-value&pcs=abc&allow_insecure=1#example")
+	if err != nil {
+		t.Fatalf("ParseVLESS() error = %v", err)
+	}
+
+	if !parsed.Security.Insecure {
+		t.Fatalf("Security.Insecure = false")
+	}
+	if parsed.Security.ALPN != "h2,http/1.1" {
+		t.Fatalf("Security.ALPN = %q", parsed.Security.ALPN)
+	}
+	if parsed.Security.ECH != "ech-value" {
+		t.Fatalf("Security.ECH = %q", parsed.Security.ECH)
+	}
+	if parsed.Security.PinnedCA256 != "abc" {
+		t.Fatalf("Security.PinnedCA256 = %q", parsed.Security.PinnedCA256)
+	}
+	if parsed.Transport.HeaderType != "http" {
+		t.Fatalf("Transport.HeaderType = %q", parsed.Transport.HeaderType)
+	}
+	if parsed.Transport.Seed != "kcp-seed" {
+		t.Fatalf("Transport.Seed = %q", parsed.Transport.Seed)
+	}
+	if parsed.Transport.KCPMTU != 1350 {
+		t.Fatalf("Transport.KCPMTU = %d", parsed.Transport.KCPMTU)
+	}
+	if parsed.Transport.KCPTTI != 20 {
+		t.Fatalf("Transport.KCPTTI = %d", parsed.Transport.KCPTTI)
+	}
+	if parsed.Transport.Mode != "multi" {
+		t.Fatalf("Transport.Mode = %q", parsed.Transport.Mode)
+	}
+	if parsed.Transport.ServiceName != "svc" {
+		t.Fatalf("Transport.ServiceName = %q", parsed.Transport.ServiceName)
+	}
+	if parsed.Transport.Authority != "grpc.example.com" {
+		t.Fatalf("Transport.Authority = %q", parsed.Transport.Authority)
+	}
+	if parsed.Transport.Extra != "{}" {
+		t.Fatalf("Transport.Extra = %q", parsed.Transport.Extra)
+	}
+	if parsed.Transport.FinalMask != "{}" {
+		t.Fatalf("Transport.FinalMask = %q", parsed.Transport.FinalMask)
+	}
+}
+
 func TestParseVLESSDefaults(t *testing.T) {
 	parsed, err := ParseVLESS("vless://ecb3a720-3d05-403e-a834-feb735184173@example.com:443")
 	if err != nil {
