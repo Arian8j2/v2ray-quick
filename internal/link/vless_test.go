@@ -142,8 +142,8 @@ func TestParseVLESSReality(t *testing.T) {
 	}
 }
 
-func TestParseVLESSV2rayNGQueryFields(t *testing.T) {
-	parsed, err := ParseVLESS("vless://6202b230-417c-4d8e-b624-0f71afa9c75d@example.com:443?security=tls&encryption=none&type=grpc&headerType=http&host=front.example.com&path=%2Fa%2C%2Fb&seed=kcp-seed&mtu=1350&tti=20&mode=multi&serviceName=svc&authority=grpc.example.com&extra=%7B%7D&fm=%7B%7D&sni=tls.example.com&fp=chrome&alpn=h2%2Chttp%2F1.1&ech=ech-value&pcs=abc&allow_insecure=1#example")
+func TestParseVLESSSupportedQueryFields(t *testing.T) {
+	parsed, err := ParseVLESS("vless://6202b230-417c-4d8e-b624-0f71afa9c75d@example.com:443?security=tls&encryption=none&type=tcp&headerType=http&host=front.example.com&path=%2Fa%2C%2Fb&sni=tls.example.com&fp=chrome&alpn=h2%2Chttp%2F1.1&ech=ech-value&pcs=abc&allow_insecure=1#example")
 	if err != nil {
 		t.Fatalf("ParseVLESS() error = %v", err)
 	}
@@ -163,29 +163,11 @@ func TestParseVLESSV2rayNGQueryFields(t *testing.T) {
 	if parsed.Transport.HeaderType != "http" {
 		t.Fatalf("Transport.HeaderType = %q", parsed.Transport.HeaderType)
 	}
-	if parsed.Transport.Seed != "kcp-seed" {
-		t.Fatalf("Transport.Seed = %q", parsed.Transport.Seed)
+	if parsed.Transport.Host != "front.example.com" {
+		t.Fatalf("Transport.Host = %q", parsed.Transport.Host)
 	}
-	if parsed.Transport.KCPMTU != 1350 {
-		t.Fatalf("Transport.KCPMTU = %d", parsed.Transport.KCPMTU)
-	}
-	if parsed.Transport.KCPTTI != 20 {
-		t.Fatalf("Transport.KCPTTI = %d", parsed.Transport.KCPTTI)
-	}
-	if parsed.Transport.Mode != "multi" {
-		t.Fatalf("Transport.Mode = %q", parsed.Transport.Mode)
-	}
-	if parsed.Transport.ServiceName != "svc" {
-		t.Fatalf("Transport.ServiceName = %q", parsed.Transport.ServiceName)
-	}
-	if parsed.Transport.Authority != "grpc.example.com" {
-		t.Fatalf("Transport.Authority = %q", parsed.Transport.Authority)
-	}
-	if parsed.Transport.Extra != "{}" {
-		t.Fatalf("Transport.Extra = %q", parsed.Transport.Extra)
-	}
-	if parsed.Transport.FinalMask != "{}" {
-		t.Fatalf("Transport.FinalMask = %q", parsed.Transport.FinalMask)
+	if parsed.Transport.Path != "/a,/b" {
+		t.Fatalf("Transport.Path = %q", parsed.Transport.Path)
 	}
 }
 

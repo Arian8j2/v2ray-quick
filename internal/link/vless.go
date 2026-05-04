@@ -34,18 +34,10 @@ type Security struct {
 }
 
 type Transport struct {
-	Type        string
-	Path        string
-	Host        string
-	HeaderType  string
-	Seed        string
-	KCPMTU      uint32
-	KCPTTI      uint32
-	Mode        string
-	ServiceName string
-	Authority   string
-	Extra       string
-	FinalMask   string
+	Type       string
+	Path       string
+	Host       string
+	HeaderType string
 }
 
 func ParseVLESS(raw string) (*VLESS, error) {
@@ -107,18 +99,10 @@ func ParseVLESS(raw string) (*VLESS, error) {
 			MLDSA65Verify: query.Get("pqv"),
 		},
 		Transport: Transport{
-			Type:        transportType,
-			Path:        query.Get("path"),
-			Host:        query.Get("host"),
-			HeaderType:  query.Get("headerType"),
-			Seed:        query.Get("seed"),
-			KCPMTU:      parseUint32OrZero(query.Get("mtu")),
-			KCPTTI:      parseUint32OrZero(query.Get("tti")),
-			Mode:        query.Get("mode"),
-			ServiceName: query.Get("serviceName"),
-			Authority:   query.Get("authority"),
-			Extra:       query.Get("extra"),
-			FinalMask:   query.Get("fm"),
+			Type:       transportType,
+			Path:       query.Get("path"),
+			Host:       query.Get("host"),
+			HeaderType: query.Get("headerType"),
 		},
 	}, nil
 }
@@ -136,17 +120,6 @@ func valueOrDefault(value string, fallback string) string {
 		return fallback
 	}
 	return value
-}
-
-func parseUint32OrZero(raw string) uint32 {
-	if raw == "" {
-		return 0
-	}
-	value, err := strconv.ParseUint(raw, 10, 32)
-	if err != nil {
-		return 0
-	}
-	return uint32(value)
 }
 
 func isTruthy(value string) bool {

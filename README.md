@@ -35,6 +35,7 @@ The interface name is the config filename without `.conf`, so `name.conf` create
 ## Supported Config
 
 - Only `vless://` links are supported for now.
+- Supported stream transports are `tcp` and `ws`.
 
 The generated Xray TUN inbound does not install routes; `v2ray-quick` creates the interface and assigns its address, but you must handle routes yourself.
 

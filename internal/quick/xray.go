@@ -66,16 +66,12 @@ type xrayVLESSUser struct {
 }
 
 type xrayStreamSettings struct {
-	Network             string                   `json:"network"`
-	Security            string                   `json:"security,omitempty"`
-	TLSSettings         *xrayTLSSettings         `json:"tlsSettings,omitempty"`
-	RealitySettings     *xrayRealitySettings     `json:"realitySettings,omitempty"`
-	TCPSettings         *xrayTCPSettings         `json:"tcpSettings,omitempty"`
-	KCPSettings         *xrayKCPSettings         `json:"kcpSettings,omitempty"`
-	WSSettings          *xrayWSSettings          `json:"wsSettings,omitempty"`
-	HTTPUpgradeSettings *xrayHTTPUpgradeSettings `json:"httpupgradeSettings,omitempty"`
-	XHTTPSettings       *xrayXHTTPSettings       `json:"xhttpSettings,omitempty"`
-	GRPCSettings        *xrayGRPCSettings        `json:"grpcSettings,omitempty"`
+	Network         string               `json:"network"`
+	Security        string               `json:"security,omitempty"`
+	TLSSettings     *xrayTLSSettings     `json:"tlsSettings,omitempty"`
+	RealitySettings *xrayRealitySettings `json:"realitySettings,omitempty"`
+	TCPSettings     *xrayTCPSettings     `json:"tcpSettings,omitempty"`
+	WSSettings      *xrayWSSettings      `json:"wsSettings,omitempty"`
 }
 
 type xrayTLSSettings struct {
@@ -110,40 +106,9 @@ type xrayHTTPRequest struct {
 	Headers map[string][]string `json:"headers,omitempty"`
 }
 
-type xrayKCPSettings struct {
-	MTU    uint32        `json:"mtu,omitempty"`
-	TTI    uint32        `json:"tti,omitempty"`
-	Header xrayKCPHeader `json:"header"`
-	Seed   string        `json:"seed,omitempty"`
-}
-
-type xrayKCPHeader struct {
-	Type string `json:"type"`
-}
-
 type xrayWSSettings struct {
 	Path string `json:"path,omitempty"`
 	Host string `json:"host,omitempty"`
-}
-
-type xrayHTTPUpgradeSettings struct {
-	Path string `json:"path,omitempty"`
-	Host string `json:"host,omitempty"`
-}
-
-type xrayXHTTPSettings struct {
-	Path  string           `json:"path,omitempty"`
-	Host  string           `json:"host,omitempty"`
-	Mode  string           `json:"mode,omitempty"`
-	Extra *json.RawMessage `json:"extra,omitempty"`
-}
-
-type xrayGRPCSettings struct {
-	Authority          string `json:"authority,omitempty"`
-	ServiceName        string `json:"serviceName,omitempty"`
-	MultiMode          bool   `json:"multiMode,omitempty"`
-	IdleTimeout        int32  `json:"idle_timeout,omitempty"`
-	HealthCheckTimeout int32  `json:"health_check_timeout,omitempty"`
 }
 
 type xrayRouting struct {
@@ -220,41 +185,11 @@ func buildVLESSOutbound(vless *link.VLESS) (xrayOutbound, error) {
 	case "", "tcp":
 		streamSettings.Network = "tcp"
 		streamSettings.TCPSettings = buildTCPSettings(vless.Transport)
-	case "kcp", "mkcp":
-		streamSettings.Network = "kcp"
-		streamSettings.KCPSettings = buildKCPSettings(vless.Transport)
 	case "ws":
 		streamSettings.Network = "ws"
 		streamSettings.WSSettings = &xrayWSSettings{
 			Path: vless.Transport.Path,
 			Host: vless.Transport.Host,
-		}
-	case "httpupgrade":
-		streamSettings.Network = "httpupgrade"
-		streamSettings.HTTPUpgradeSettings = &xrayHTTPUpgradeSettings{
-			Path: vless.Transport.Path,
-			Host: vless.Transport.Host,
-		}
-	case "xhttp", "splithttp":
-		extra, err := parseRawJSON(vless.Transport.Extra)
-		if err != nil {
-			return xrayOutbound{}, err
-		}
-		streamSettings.Network = "xhttp"
-		streamSettings.XHTTPSettings = &xrayXHTTPSettings{
-			Path:  vless.Transport.Path,
-			Host:  vless.Transport.Host,
-			Mode:  vless.Transport.Mode,
-			Extra: extra,
-		}
-	case "grpc":
-		streamSettings.Network = "grpc"
-		streamSettings.GRPCSettings = &xrayGRPCSettings{
-			Authority:          vless.Transport.Authority,
-			ServiceName:        vless.Transport.ServiceName,
-			MultiMode:          strings.EqualFold(vless.Transport.Mode, "multi"),
-			IdleTimeout:        60,
-			HealthCheckTimeout: 20,
 		}
 	default:
 		return xrayOutbound{}, fmt.Errorf("unsupported vless transport %q", vless.Transport.Type)
@@ -302,30 +237,6 @@ func buildTCPSettings(transport link.Transport) *xrayTCPSettings {
 	}
 	settings.Header.Request = request
 	return settings
-}
-
-func buildKCPSettings(transport link.Transport) *xrayKCPSettings {
-	headerType := transport.HeaderType
-	if headerType == "" {
-		headerType = "none"
-	}
-	return &xrayKCPSettings{
-		MTU:    transport.KCPMTU,
-		TTI:    transport.KCPTTI,
-		Header: xrayKCPHeader{Type: headerType},
-		Seed:   transport.Seed,
-	}
-}
-
-func parseRawJSON(raw string) (*json.RawMessage, error) {
-	if strings.TrimSpace(raw) == "" {
-		return nil, nil
-	}
-	message := json.RawMessage(raw)
-	if !json.Valid(message) {
-		return nil, fmt.Errorf("invalid xhttp extra json %q", raw)
-	}
-	return &message, nil
 }
 
 func splitComma(value string) []string {
