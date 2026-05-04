@@ -15,11 +15,11 @@ func runForeground(instance Instance, address string) error {
 		return fmt.Errorf("interface %s already exists", instance.InterfaceName)
 	}
 
-	vless, err := LoadVLESS(instance.ConfigPath)
+	proxy, err := LoadLink(instance.ConfigPath)
 	if err != nil {
 		return err
 	}
-	config, err := BuildConfig(vless, instance.InterfaceName)
+	config, err := BuildConfig(proxy, instance.InterfaceName)
 	if err != nil {
 		return err
 	}

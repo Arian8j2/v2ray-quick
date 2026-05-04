@@ -1,12 +1,12 @@
 # v2ray-quick
 
-`v2ray-quick` is a small Linux CLI for bringing up and tearing down an Xray TUN interface from a VLESS link. Its command shape and terminal output are intentionally modeled after `wg-quick`.
+`v2ray-quick` is a small Linux CLI for bringing up and tearing down an Xray TUN interface from a VLESS or VMess link. Its command shape and terminal output are intentionally modeled after `wg-quick`.
 
 This project is entirely AI-written.
 
 ## Usage
 
-Put a VLESS URL on the first nonblank line of a `.conf` file:
+Put a VLESS or VMess URL on the first nonblank line of a `.conf` file:
 
 ```text
 vless://uuid@example.com:443?encryption=none&security=tls&type=ws&path=%2F&host=example.com#name
@@ -34,7 +34,7 @@ The interface name is the config filename without `.conf`, so `name.conf` create
 
 ## Supported Config
 
-- Only `vless://` links are supported for now.
+- `vless://` and `vmess://` links are supported.
 - Supported stream transports are `tcp` and `ws`.
 
 The generated Xray TUN inbound does not install routes; `v2ray-quick` creates the interface and assigns its address, but you must handle routes yourself.

@@ -19,6 +19,8 @@ type VLESS struct {
 	Transport  Transport
 }
 
+func (*VLESS) link() {}
+
 type Security struct {
 	Type          string
 	ServerName    string
@@ -110,7 +112,7 @@ func ParseVLESS(raw string) (*VLESS, error) {
 func parsePort(raw string) (uint16, error) {
 	port, err := strconv.ParseUint(raw, 10, 16)
 	if err != nil || port == 0 {
-		return 0, fmt.Errorf("invalid vless port %q", raw)
+		return 0, fmt.Errorf("invalid port %q", raw)
 	}
 	return uint16(port), nil
 }

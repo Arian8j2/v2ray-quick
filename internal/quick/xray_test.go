@@ -35,6 +35,19 @@ func TestBuildConfigParsesRealityAsXrayJSON(t *testing.T) {
 	assertXrayConfigLoads(t, config)
 }
 
+func TestBuildConfigParsesVMessAsXrayJSON(t *testing.T) {
+	parsed, err := link.ParseVMess("vmess://eyJhZGQiOiJleGFtcGxlLmNvbSIsImhvc3QiOiJ3cy5leGFtcGxlLm5ldCIsImlkIjoiNjIwMmIyMzAtNDE3Yy00ZDhlLWI2MjQtMGY3MWFmYTljNzVkIiwibmV0Ijoid3MiLCJwYXRoIjoiL2FkZmZyMjFhc2QzMTIiLCJwb3J0Ijo4MCwicHMiOiJleGFtcGxlLXZtZXNzLXdzIiwic2N5IjoiYXV0byIsInRscyI6Im5vbmUiLCJ0eXBlIjoibm9uZSIsInYiOiIyIn0=")
+	if err != nil {
+		t.Fatalf("ParseVMess() error = %v", err)
+	}
+	config, err := BuildConfig(parsed, "example")
+	if err != nil {
+		t.Fatalf("BuildConfig() error = %v", err)
+	}
+
+	assertXrayConfigLoads(t, config)
+}
+
 func TestBuildConfigParsesSupportedTransports(t *testing.T) {
 	tests := []string{
 		"vless://6202b230-417c-4d8e-b624-0f71afa9c75d@example.com:443?security=none&encryption=none&type=tcp&headerType=http&host=front.example.com&path=%2Fa%2C%2Fb#tcp-http",

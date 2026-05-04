@@ -35,11 +35,11 @@ func printConfig(args []string) error {
 }
 
 func writeXrayConfigForInstance(writer io.Writer, instance Instance) error {
-	vless, err := LoadVLESS(instance.ConfigPath)
+	proxy, err := LoadLink(instance.ConfigPath)
 	if err != nil {
 		return err
 	}
-	config, err := BuildConfig(vless, instance.InterfaceName)
+	config, err := BuildConfig(proxy, instance.InterfaceName)
 	if err != nil {
 		return err
 	}

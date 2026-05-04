@@ -11,7 +11,7 @@ import (
 	"v2ray-quick/internal/link"
 )
 
-func LoadVLESS(path string) (*link.VLESS, error) {
+func LoadLink(path string) (link.Link, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read config file: %w", err)
@@ -23,13 +23,25 @@ func LoadVLESS(path string) (*link.VLESS, error) {
 		if line == "" {
 			continue
 		}
-		if !strings.HasPrefix(strings.ToLower(line), "vless://") {
-			return nil, fmt.Errorf("unsupported config link %q: only vless:// is implemented", line)
+		if !strings.HasPrefix(strings.ToLower(line), "vless://") && !strings.HasPrefix(strings.ToLower(line), "vmess://") {
+			return nil, fmt.Errorf("unsupported config link %q: only vless:// and vmess:// are implemented", line)
 		}
-		return link.ParseVLESS(line)
+		return link.Parse(line)
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("read config file: %w", err)
 	}
-	return nil, errors.New("config file does not contain a vless:// link")
+	return nil, errors.New("config file does not contain a vless:// or vmess:// link")
+}
+
+func LoadVLESS(path string) (*link.VLESS, error) {
+	proxy, err := LoadLink(path)
+	if err != nil {
+		return nil, err
+	}
+	vless, ok := proxy.(*link.VLESS)
+	if !ok {
+		return nil, fmt.Errorf("config file contains %T, not a vless link", proxy)
+	}
+	return vless, nil
 }

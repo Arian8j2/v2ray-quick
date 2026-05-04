@@ -65,6 +65,22 @@ type xrayVLESSUser struct {
 	Flow       string `json:"flow,omitempty"`
 }
 
+type xrayVMessSettings struct {
+	Vnext []xrayVMessVNext `json:"vnext"`
+}
+
+type xrayVMessVNext struct {
+	Address string          `json:"address"`
+	Port    uint16          `json:"port"`
+	Users   []xrayVMessUser `json:"users"`
+}
+
+type xrayVMessUser struct {
+	ID       string `json:"id"`
+	AlterID  int    `json:"alterId"`
+	Security string `json:"security,omitempty"`
+}
+
 type xrayStreamSettings struct {
 	Network         string               `json:"network"`
 	Security        string               `json:"security,omitempty"`
@@ -115,8 +131,8 @@ type xrayRouting struct {
 	DomainStrategy string `json:"domainStrategy"`
 }
 
-func BuildConfig(vless *link.VLESS, interfaceName string) (xrayConfig, error) {
-	outbound, err := buildVLESSOutbound(vless)
+func BuildConfig(proxy link.Link, interfaceName string) (xrayConfig, error) {
+	outbound, err := buildProxyOutbound(proxy)
 	if err != nil {
 		return xrayConfig{}, err
 	}
@@ -148,51 +164,25 @@ func BuildConfig(vless *link.VLESS, interfaceName string) (xrayConfig, error) {
 	}, nil
 }
 
+func buildProxyOutbound(proxy link.Link) (xrayOutbound, error) {
+	switch proxy := proxy.(type) {
+	case *link.VLESS:
+		return buildVLESSOutbound(proxy)
+	case *link.VMess:
+		return buildVMessOutbound(proxy)
+	default:
+		return xrayOutbound{}, fmt.Errorf("unsupported proxy link %T", proxy)
+	}
+}
+
 func buildVLESSOutbound(vless *link.VLESS) (xrayOutbound, error) {
 	if !strings.EqualFold(vless.Encryption, "none") {
 		return xrayOutbound{}, fmt.Errorf("unsupported vless encryption %q", vless.Encryption)
 	}
 
-	streamSettings := &xrayStreamSettings{}
-	switch strings.ToLower(vless.Security.Type) {
-	case "", "none":
-		streamSettings.Security = "none"
-	case "tls":
-		streamSettings.Security = "tls"
-		streamSettings.TLSSettings = &xrayTLSSettings{
-			ServerName:           vless.Security.ServerName,
-			AllowInsecure:        vless.Security.Insecure,
-			Fingerprint:          vless.Security.Fingerprint,
-			ALPN:                 splitComma(vless.Security.ALPN),
-			ECHConfigList:        vless.Security.ECH,
-			PinnedPeerCertSHA256: vless.Security.PinnedCA256,
-		}
-	case "reality":
-		streamSettings.Security = "reality"
-		streamSettings.RealitySettings = &xrayRealitySettings{
-			ServerName:    vless.Security.ServerName,
-			Fingerprint:   vless.Security.Fingerprint,
-			PublicKey:     vless.Security.PublicKey,
-			ShortID:       vless.Security.ShortID,
-			SpiderX:       vless.Security.SpiderX,
-			MLDSA65Verify: vless.Security.MLDSA65Verify,
-		}
-	default:
-		return xrayOutbound{}, fmt.Errorf("unsupported vless security %q", vless.Security.Type)
-	}
-
-	switch strings.ToLower(vless.Transport.Type) {
-	case "", "tcp":
-		streamSettings.Network = "tcp"
-		streamSettings.TCPSettings = buildTCPSettings(vless.Transport)
-	case "ws":
-		streamSettings.Network = "ws"
-		streamSettings.WSSettings = &xrayWSSettings{
-			Path: vless.Transport.Path,
-			Host: vless.Transport.Host,
-		}
-	default:
-		return xrayOutbound{}, fmt.Errorf("unsupported vless transport %q", vless.Transport.Type)
+	streamSettings, err := buildStreamSettings("vless", vless.Security, vless.Transport)
+	if err != nil {
+		return xrayOutbound{}, err
 	}
 
 	return xrayOutbound{
@@ -215,6 +205,83 @@ func buildVLESSOutbound(vless *link.VLESS) (xrayOutbound, error) {
 		},
 		StreamSettings: streamSettings,
 	}, nil
+}
+
+func buildVMessOutbound(vmess *link.VMess) (xrayOutbound, error) {
+	streamSettings, err := buildStreamSettings("vmess", vmess.TLS, vmess.Transport)
+	if err != nil {
+		return xrayOutbound{}, err
+	}
+
+	return xrayOutbound{
+		Tag:      "proxy",
+		Protocol: "vmess",
+		Settings: xrayVMessSettings{
+			Vnext: []xrayVMessVNext{
+				{
+					Address: vmess.Server,
+					Port:    vmess.Port,
+					Users: []xrayVMessUser{
+						{
+							ID:       vmess.UUID,
+							AlterID:  vmess.AlterID,
+							Security: vmess.Security,
+						},
+					},
+				},
+			},
+		},
+		StreamSettings: streamSettings,
+	}, nil
+}
+
+func buildStreamSettings(protocol string, security link.Security, transport link.Transport) (*xrayStreamSettings, error) {
+	streamSettings := &xrayStreamSettings{}
+	switch strings.ToLower(security.Type) {
+	case "", "none":
+		streamSettings.Security = "none"
+	case "tls":
+		streamSettings.Security = "tls"
+		streamSettings.TLSSettings = &xrayTLSSettings{
+			ServerName:           security.ServerName,
+			AllowInsecure:        security.Insecure,
+			Fingerprint:          security.Fingerprint,
+			ALPN:                 splitComma(security.ALPN),
+			ECHConfigList:        security.ECH,
+			PinnedPeerCertSHA256: security.PinnedCA256,
+		}
+	case "reality":
+		if protocol != "vless" {
+			return nil, fmt.Errorf("unsupported %s security %q", protocol, security.Type)
+		}
+		streamSettings.Security = "reality"
+		streamSettings.RealitySettings = &xrayRealitySettings{
+			ServerName:    security.ServerName,
+			Fingerprint:   security.Fingerprint,
+			PublicKey:     security.PublicKey,
+			ShortID:       security.ShortID,
+			SpiderX:       security.SpiderX,
+			MLDSA65Verify: security.MLDSA65Verify,
+		}
+	default:
+		return nil, fmt.Errorf("unsupported %s security %q", protocol, security.Type)
+	}
+
+	switch strings.ToLower(transport.Type) {
+	case "", "tcp":
+		streamSettings.Network = "tcp"
+		streamSettings.TCPSettings = buildTCPSettings(transport)
+	case "ws":
+		streamSettings.Network = "ws"
+		streamSettings.WSSettings = &xrayWSSettings{
+			Path: transport.Path,
+			Host: transport.Host,
+		}
+	default:
+		return nil, fmt.Errorf("unsupported %s transport %q", protocol, transport.Type)
+	}
+
+	return streamSettings, nil
 }
 
 func buildTCPSettings(transport link.Transport) *xrayTCPSettings {
