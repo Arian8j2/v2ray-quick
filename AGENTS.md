@@ -14,7 +14,7 @@
 ## CLI And Runtime Gotchas
 - The tool's command shape and terminal output are based on the look and feel of `wg-quick`; preserve that style when changing UX.
 - CLI form is `v2ray-quick up [-f] [-a address|--address address] ./name.conf` and `v2ray-quick down ./name.conf`.
-- Config filenames must end in `.conf`; the tun interface name is the basename without `.conf` and must fit Linux's 15-byte interface-name limit.
+- The tun interface name is the basename up to the first dot (or the whole basename if no dot) and must fit Linux's 15-byte interface-name limit.
 - `.conf` files and the built `v2ray-quick` binary are ignored by git; avoid adding real proxy configs or generated binaries.
 - Config loading reads the first nonblank line only and currently supports only `vless://` links.
 - Supported VLESS encryption is `none`; supported security is `none`, `tls`, or `reality`; supported transports are `tcp` and `ws`.

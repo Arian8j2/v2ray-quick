@@ -134,7 +134,7 @@ func processAlive(pid int) bool {
 }
 
 func usageError() error {
-	return errors.New("usage: v2ray-quick up [-f] [-a address|--address address] ./name.conf | v2ray-quick print [-a address|--address address] ./name.conf | v2ray-quick down ./name.conf")
+	return errors.New("usage: v2ray-quick up [-f] [-a address|--address address] ./filename | v2ray-quick print [-a address|--address address] ./filename | v2ray-quick down ./filename")
 }
 
 func resolveTunAddress(address string, shortAddress string) (string, error) {

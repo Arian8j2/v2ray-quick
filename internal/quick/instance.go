@@ -21,12 +21,12 @@ func NewInstance(configPath string) (Instance, error) {
 		return Instance{}, fmt.Errorf("resolve config path: %w", err)
 	}
 	configName := filepath.Base(canonical)
-	if !strings.HasSuffix(configName, ".conf") {
-		return Instance{}, fmt.Errorf("config filename must match .+\\.conf: %s", configName)
+	interfaceName := configName
+	if idx := strings.Index(configName, "."); idx != -1 {
+		interfaceName = configName[:idx]
 	}
-	interfaceName := strings.TrimSuffix(configName, ".conf")
 	if interfaceName == "" {
-		return Instance{}, fmt.Errorf("config filename must match .+\\.conf: %s", configName)
+		return Instance{}, fmt.Errorf("derived empty interface name from config filename: %s", configName)
 	}
 	if len(interfaceName) > 15 {
 		return Instance{}, fmt.Errorf("tun interface name %q is too long: Linux interface names must be at most 15 bytes", interfaceName)
